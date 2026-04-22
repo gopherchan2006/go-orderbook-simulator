@@ -52,10 +52,10 @@ h2 {
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 main {
   display: flex;
+  flex-direction: column;
   gap: 20px;
   padding: 20px 32px 32px;
   flex: 1;
-  align-items: flex-start;
 }
 
 .panel {
@@ -65,21 +65,22 @@ main {
   padding: 16px;
 }
 
+/* Order book table: fixed width, centered */
 #book-panel {
-  width: 380px;
-  flex-shrink: 0;
+  width: 440px;
+  align-self: center;
 }
 
+/* Depth chart: full width */
 #chart-panel {
-  flex: 1;
-  min-width: 360px;
+  width: 100%;
 }
 
 /* ── Depth canvas ─────────────────────────────────────────────────────────── */
 #depth-canvas {
   display: block;
   width: 100%;
-  height: 340px;
+  height: 300px;
 }
 
 /* ── Order book table ────────────────────────────────────────────────────── */
