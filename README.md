@@ -17,4 +17,11 @@ go run . --scenario spoof.json --speed 0
 go run . --scenario spoof.json --speed 0.5
 ```
 
+## Frontend
 
+```bash
+cd web
+npm install
+npm run dev        # opens at http://localhost:5173
+```
+Keep the backend running in a separate terminal.
