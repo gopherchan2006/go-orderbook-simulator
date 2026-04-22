@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Book Simulator</title>
+  </head>
+  <body>
+    <header>
+      <h1>Order Book Simulator</h1>
+      <span id="status" class="status wait">connecting…</span>
+    </header>
+
+    <main>
+      <!-- Left panel: classic order book table -->
+      <section class="panel" id="book-panel">
+        <h2>Order Book</h2>
+
+        <table class="ob-table" id="asks-table">
+          <thead>
+            <tr><th>Price (Ask)</th><th>Qty</th><th>Cumul.</th></tr>
+          </thead>
+          <tbody id="asks-body"></tbody>
+        </table>
+
+        <div id="spread-bar">— spread —</div>
+
+        <table class="ob-table" id="bids-table">
+          <tbody id="bids-body"></tbody>
+          <thead>
+            <tr><th>Price (Bid)</th><th>Qty</th><th>Cumul.</th></tr>
+          </thead>
+        </table>
+      </section>
+
+      <!-- Right panel: depth chart -->
+      <section class="panel" id="chart-panel">
+        <h2>Market Depth</h2>
+        <canvas id="depth-canvas"></canvas>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

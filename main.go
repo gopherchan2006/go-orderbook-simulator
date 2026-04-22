@@ -16,6 +16,7 @@ type Config struct {
 	ScenarioPath string
 	Speed        float64
 	Port         int
+	AllowOrigin  string
 }
 
 type Hub struct {
@@ -65,7 +66,22 @@ type depthUpdateMsg struct {
 }
 
 var upgrader = websocket.Upgrader{
+	// Origin check is handled by the corsMiddleware wrapper.
 	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+// corsMiddleware sets CORS headers so the SPA dev-server (e.g. localhost:5173)
+// can connect to this backend without a proxy.
+func corsMiddleware(allowOrigin string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next(w, r)
+	}
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request, hub *Hub, ob *OrderBook) {
@@ -154,6 +170,7 @@ func main() {
 	flag.StringVar(&cfg.ScenarioPath, "scenario", "", "path to scenario JSON file (required)")
 	flag.Float64Var(&cfg.Speed, "speed", 1.0, "playback speed multiplier: 1.0=realtime, 0=instant, 0.5=half-speed")
 	flag.IntVar(&cfg.Port, "port", 8080, "WebSocket server port")
+	flag.StringVar(&cfg.AllowOrigin, "allow-origin", "http://localhost:5173", "CORS allowed origin for the SPA dev-server")
 	flag.Parse()
 
 	if cfg.ScenarioPath == "" {
@@ -171,16 +188,14 @@ func main() {
 
 	hub := NewHub()
 
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws", corsMiddleware(cfg.AllowOrigin, func(w http.ResponseWriter, r *http.Request) {
 		handleWebSocket(w, r, hub, ob)
-	})
-	http.HandleFunc("/", serveUI)
+	}))
 
 	go runUpdateLoop(scenario, ob, hub, cfg.Speed)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
-	log.Printf("listening on ws://localhost%s/ws  speed=%.2f", addr, cfg.Speed)
-	log.Printf("order book UI: http://localhost%s/", addr)
+	log.Printf("listening on ws://localhost%s/ws  speed=%.2f  allow-origin=%s", addr, cfg.Speed, cfg.AllowOrigin)
 
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("server error: %v", err)

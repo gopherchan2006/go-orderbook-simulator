@@ -1,0 +1,141 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #0d0f14;
+  color: #c9d1d9;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 32px 16px;
+  border-bottom: 1px solid #21262d;
+}
+
+h1 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #8b949e;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+h2 {
+  font-size: 10px;
+  color: #484f58;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.status {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: #161b22;
+  transition: color 0.3s;
+}
+.status.ok   { color: #3fb950; }
+.status.err  { color: #f85149; }
+.status.wait { color: #8b949e; }
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+main {
+  display: flex;
+  gap: 20px;
+  padding: 20px 32px 32px;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.panel {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+#book-panel {
+  width: 380px;
+  flex-shrink: 0;
+}
+
+#chart-panel {
+  flex: 1;
+  min-width: 360px;
+}
+
+/* ── Depth canvas ─────────────────────────────────────────────────────────── */
+#depth-canvas {
+  display: block;
+  width: 100%;
+  height: 340px;
+}
+
+/* ── Order book table ────────────────────────────────────────────────────── */
+.ob-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ob-table thead th {
+  font-size: 10px;
+  color: #484f58;
+  padding: 4px 8px;
+  text-align: right;
+  border-bottom: 1px solid #21262d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ob-table thead th:first-child { text-align: left; }
+
+.ob-table td {
+  padding: 3px 8px;
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ob-table td:first-child { text-align: left; }
+
+td.cumul { color: #484f58; font-size: 11px; }
+
+tr.ask td { background: rgba(248, 81, 73, 0.07); }
+tr.bid td { background: rgba(63, 185, 80, 0.07); }
+
+tr.ask td.price { color: #f85149; }
+tr.bid td.price { color: #3fb950; }
+
+/* ── Flash animations on level change ────────────────────────────────────── */
+@keyframes flash-ask {
+  from { background: rgba(248, 81, 73, 0.5); }
+  to   { background: rgba(248, 81, 73, 0.07); }
+}
+@keyframes flash-bid {
+  from { background: rgba(63, 185, 80, 0.5); }
+  to   { background: rgba(63, 185, 80, 0.07); }
+}
+
+tr.ask.flash td { animation: flash-ask 0.7s ease-out forwards; }
+tr.bid.flash td { animation: flash-bid 0.7s ease-out forwards; }
+
+/* ── Spread bar ──────────────────────────────────────────────────────────── */
+#spread-bar {
+  text-align: center;
+  font-size: 11px;
+  color: #e3b341;
+  padding: 5px 0;
+  border-top: 1px solid #21262d;
+  border-bottom: 1px solid #21262d;
+}
