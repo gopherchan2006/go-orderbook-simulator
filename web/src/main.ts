@@ -3,6 +3,7 @@ import { OrderBook } from './orderbook';
 import { connect } from './ws';
 import { renderTable } from './table';
 import { drawDepthChart } from './depth-chart';
+import { HeatmapBuffer, drawHeatmap } from './heatmap';
 
 const WS_URL = 'ws://localhost:8080/ws';
 
@@ -12,7 +13,9 @@ const statusEl = document.getElementById('status')!;
 const asksBody = document.getElementById('asks-body') as HTMLTableSectionElement;
 const bidsBody = document.getElementById('bids-body') as HTMLTableSectionElement;
 const spreadEl = document.getElementById('spread-bar')!;
-const canvas   = document.getElementById('depth-canvas') as HTMLCanvasElement;
+const canvas        = document.getElementById('depth-canvas') as HTMLCanvasElement;
+const hmCanvas      = document.getElementById('heatmap-canvas') as HTMLCanvasElement;
+const hmBuffer      = new HeatmapBuffer();
 
 function render(
   changedBids = new Set<string>(),
@@ -22,6 +25,8 @@ function render(
   const asks = ob.sortedAsks();
   renderTable(asksBody, bidsBody, spreadEl, bids, asks, changedBids, changedAsks);
   drawDepthChart(canvas, bids, asks);
+  hmBuffer.push(bids, asks);
+  drawHeatmap(hmCanvas, hmBuffer);
 }
 
 connect(
@@ -44,6 +49,10 @@ connect(
 );
 
 // Redraw chart whenever the canvas container resizes (responsive layout)
-const ro = new ResizeObserver(() => drawDepthChart(canvas, ob.sortedBids(), ob.sortedAsks()));
+const ro = new ResizeObserver(() => {
+  drawDepthChart(canvas, ob.sortedBids(), ob.sortedAsks());
+  drawHeatmap(hmCanvas, hmBuffer);
+});
 ro.observe(canvas);
+ro.observe(hmCanvas);
 
