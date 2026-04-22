@@ -1,4 +1,4 @@
-![alt text](assets/image.png)
+![alt text](assets/example.gif)
 
 Go-orderbook-simulator is a order book simulator for testing of anomaly detectors.
 The service starts a WebSocket server and sends an initial snapshot plus a stream of depthUpdate events from a JSON scenario.
