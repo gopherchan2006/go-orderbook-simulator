@@ -65,9 +65,9 @@ main {
   padding: 16px;
 }
 
-/* Order book table: fixed width, centered */
+/* Order book table: capped width, centered; shrinks on small screens */
 #book-panel {
-  width: 440px;
+  width: min(440px, 100%);
   align-self: center;
 }
 
