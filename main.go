@@ -66,12 +66,9 @@ type depthUpdateMsg struct {
 }
 
 var upgrader = websocket.Upgrader{
-	// Origin check is handled by the corsMiddleware wrapper.
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// corsMiddleware sets CORS headers so the SPA dev-server (e.g. localhost:5173)
-// can connect to this backend without a proxy.
 func corsMiddleware(allowOrigin string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
