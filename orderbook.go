@@ -40,24 +40,24 @@ func (ob *OrderBook) ApplyUpdate(bids, asks [][2]float64) {
 		}
 	}
 }
-func (ob *OrderBook) GetSnapshot() (bids, asks [][2]float64) {
+func (ob *OrderBook) GetSnapshot() (bids, asks []Level) {
 	ob.mu.RLock()
 	defer ob.mu.RUnlock()
 
-	bids = make([][2]float64, 0, len(ob.bids))
+	bids = make([]Level, 0, len(ob.bids))
 	for price, qty := range ob.bids {
-		bids = append(bids, [2]float64{price, qty})
+		bids = append(bids, Level{Price: price, Amount: qty})
 	}
 	sort.Slice(bids, func(i, j int) bool {
-		return bids[i][0] > bids[j][0]
+		return bids[i].Price > bids[j].Price
 	})
 
-	asks = make([][2]float64, 0, len(ob.asks))
+	asks = make([]Level, 0, len(ob.asks))
 	for price, qty := range ob.asks {
-		asks = append(asks, [2]float64{price, qty})
+		asks = append(asks, Level{Price: price, Amount: qty})
 	}
 	sort.Slice(asks, func(i, j int) bool {
-		return asks[i][0] < asks[j][0]
+		return asks[i].Price < asks[j].Price
 	})
 
 	return bids, asks

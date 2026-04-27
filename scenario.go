@@ -36,9 +36,13 @@ func LoadScenario(path string) (*Scenario, error) {
 	return &s, nil
 }
 
-func nonNil(s [][2]float64) [][2]float64 {
-	if s == nil {
-		return [][2]float64{}
+func toLevels(s [][2]float64) []Level {
+	if len(s) == 0 {
+		return []Level{}
 	}
-	return s
+	levels := make([]Level, len(s))
+	for i, v := range s {
+		levels[i] = Level{Price: v[0], Amount: v[1]}
+	}
+	return levels
 }

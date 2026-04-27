@@ -53,16 +53,21 @@ func (h *Hub) Broadcast(msg []byte) {
 	}
 }
 
+type Level struct {
+	Price  float64
+	Amount float64
+}
+
 type depthSnapshotMsg struct {
-	Event string       `json:"e"`
-	Bids  [][2]float64 `json:"bids"`
-	Asks  [][2]float64 `json:"asks"`
+	Event string  `json:"e"`
+	Bids  []Level `json:"bids"`
+	Asks  []Level `json:"asks"`
 }
 
 type depthUpdateMsg struct {
-	Event string       `json:"e"`
-	Bids  [][2]float64 `json:"b"`
-	Asks  [][2]float64 `json:"a"`
+	Event string  `json:"e"`
+	Bids  []Level `json:"b"`
+	Asks  []Level `json:"a"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -146,8 +151,8 @@ func runUpdateLoop(scenario *Scenario, ob *OrderBook, hub *Hub, speed float64) {
 
 		msg := depthUpdateMsg{
 			Event: "depthUpdate",
-			Bids:  nonNil(update.Bids),
-			Asks:  nonNil(update.Asks),
+			Bids:  toLevels(update.Bids),
+			Asks:  toLevels(update.Asks),
 		}
 		data, err := json.Marshal(msg)
 		if err != nil {
