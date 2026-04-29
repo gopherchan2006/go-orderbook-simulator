@@ -112,17 +112,21 @@ func main() {
 		go source.RunSim(ctx, scenario, ob, h, *speed)
 
 	case "binance":
-		log.Printf("binance mode: connecting to Binance depth stream...")
+		log.Printf("binance mode: connecting to Binance depth + aggTrade streams...")
 		go source.RunBinance(ctx, ob, h)
+		go source.RunBinanceTape(ctx, h)
 
 	default:
 		log.Fatalf("unknown mode %q: use sim or binance", *mode)
 	}
 
-	// Tape engine: runs in both modes, generates trade ticks from book state.
-	tapeCfg := tape.DefaultConfig()
-	tapeEngine := tape.New(tapeCfg, ob, h)
-	go tapeEngine.Run(ctx)
+	// Tape engine: generates synthetic trade ticks in sim mode only.
+	// In binance mode, real trades come from the aggTrade stream.
+	if *mode == "sim" {
+		tapeCfg := tape.DefaultConfig()
+		tapeEngine := tape.New(tapeCfg, ob, h)
+		go tapeEngine.Run(ctx)
+	}
 
 	http.HandleFunc("/ws", corsMiddleware(*allowOrigin, func(w http.ResponseWriter, r *http.Request) {
 		handleWebSocket(w, r, h, ob)
