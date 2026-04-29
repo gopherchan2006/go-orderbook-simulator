@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"strconv"
 	"time"
 
 	"go-orderbook-simulator/internal/hub"
@@ -16,23 +17,24 @@ import (
 const binanceDepthStream = "wss://stream.binance.com:9443/ws/btcusdt@depth@100ms"
 
 type binanceDepthMsg struct {
-	EventType string               `json:"e"`
-	EventTime int64                `json:"E"`
-	Symbol    string               `json:"s"`
-	FirstID   int64                `json:"U"`
-	FinalID   int64                `json:"u"`
-	Bids      [][2]json.RawMessage `json:"b"`
-	Asks      [][2]json.RawMessage `json:"a"`
+	EventType string     `json:"e"`
+	EventTime int64      `json:"E"`
+	Symbol    string     `json:"s"`
+	FirstID   int64      `json:"U"`
+	FinalID   int64      `json:"u"`
+	Bids      [][2]string `json:"b"`
+	Asks      [][2]string `json:"a"`
 }
 
-func parseLevels(raw [][2]json.RawMessage) []protocol.Level {
+func parseLevels(raw [][2]string) []protocol.Level {
 	out := make([]protocol.Level, 0, len(raw))
 	for _, pair := range raw {
-		var p, q float64
-		if err := json.Unmarshal(pair[0], &p); err != nil {
+		p, err := strconv.ParseFloat(pair[0], 64)
+		if err != nil {
 			continue
 		}
-		if err := json.Unmarshal(pair[1], &q); err != nil {
+		q, err := strconv.ParseFloat(pair[1], 64)
+		if err != nil {
 			continue
 		}
 		out = append(out, protocol.Level{Price: p, Amount: q})
