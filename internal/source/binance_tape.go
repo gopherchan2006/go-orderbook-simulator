@@ -23,6 +23,7 @@ type binanceAggTradeMsg struct {
 	Price        string `json:"p"`
 	Qty          string `json:"q"`
 	IsBuyerMaker bool   `json:"m"`
+	BestMatch    bool   `json:"M"`
 }
 
 func RunBinanceTape(ctx context.Context, h *hub.Hub) {
