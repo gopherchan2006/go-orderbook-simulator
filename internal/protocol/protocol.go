@@ -1,9 +1,26 @@
 package protocol
 
+import "encoding/json"
+
 // Level represents a single price level in the order book.
+// It marshals/unmarshals as a JSON array [price, qty] to match frontend expectations.
 type Level struct {
-	Price  float64 `json:"p"`
-	Amount float64 `json:"q"`
+	Price  float64
+	Amount float64
+}
+
+func (l Level) MarshalJSON() ([]byte, error) {
+	return json.Marshal([2]float64{l.Price, l.Amount})
+}
+
+func (l *Level) UnmarshalJSON(data []byte) error {
+	var arr [2]float64
+	if err := json.Unmarshal(data, &arr); err != nil {
+		return err
+	}
+	l.Price = arr[0]
+	l.Amount = arr[1]
+	return nil
 }
 
 // DepthSnapshot is sent once to a new subscriber with the full book state.

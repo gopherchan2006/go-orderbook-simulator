@@ -4,18 +4,23 @@ import { connect } from './ws';
 import { renderTable } from './table';
 import { drawDepthChart } from './depth-chart';
 import { HeatmapBuffer, drawHeatmap } from './heatmap';
+import { TapeRenderer } from './tape';
 
 const WS_URL = 'ws://localhost:8080/ws';
 
 const ob = new OrderBook();
 
-const statusEl = document.getElementById('status')!;
-const asksBody = document.getElementById('asks-body') as HTMLTableSectionElement;
-const bidsBody = document.getElementById('bids-body') as HTMLTableSectionElement;
-const spreadEl = document.getElementById('spread-bar')!;
-const canvas        = document.getElementById('depth-canvas') as HTMLCanvasElement;
-const hmCanvas      = document.getElementById('heatmap-canvas') as HTMLCanvasElement;
-const hmBuffer      = new HeatmapBuffer();
+const statusEl  = document.getElementById('status')!;
+const asksBody  = document.getElementById('asks-body') as HTMLTableSectionElement;
+const bidsBody  = document.getElementById('bids-body') as HTMLTableSectionElement;
+const spreadEl  = document.getElementById('spread-bar')!;
+const canvas    = document.getElementById('depth-canvas') as HTMLCanvasElement;
+const hmCanvas  = document.getElementById('heatmap-canvas') as HTMLCanvasElement;
+const hmBuffer  = new HeatmapBuffer();
+
+const tapeBody  = document.getElementById('tape-body') as HTMLTableSectionElement;
+const cvdCanvas = document.getElementById('cvd-canvas') as HTMLCanvasElement;
+const tape      = new TapeRenderer(tapeBody, cvdCanvas);
 
 function render(
   changedBids = new Set<string>(),
@@ -35,9 +40,11 @@ connect(
     if (msg.e === 'depthSnapshot') {
       ob.applySnapshot(msg.bids, msg.asks);
       render();
-    } else {
+    } else if (msg.e === 'depthUpdate') {
       const { changedBids, changedAsks } = ob.applyUpdate(msg.b, msg.a);
       render(changedBids, changedAsks);
+    } else if (msg.e === 'trade') {
+      tape.push(msg);
     }
   },
   (status) => {
@@ -48,7 +55,7 @@ connect(
   },
 );
 
-// Redraw chart whenever the canvas container resizes (responsive layout)
+// Redraw charts on resize
 const ro = new ResizeObserver(() => {
   drawDepthChart(canvas, ob.sortedBids(), ob.sortedAsks());
   drawHeatmap(hmCanvas, hmBuffer);

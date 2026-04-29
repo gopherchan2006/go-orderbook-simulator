@@ -10,7 +10,16 @@ export type DepthUpdateMsg = {
   a: [number, number][];
 };
 
-export type WSMessage = DepthSnapshotMsg | DepthUpdateMsg;
+export type TradeMsg = {
+  e: 'trade';
+  ts: number;   // unix ms
+  p: number;    // price
+  q: number;    // qty
+  side: 'buy' | 'sell';
+  seq: number;
+};
+
+export type WSMessage = DepthSnapshotMsg | DepthUpdateMsg | TradeMsg;
 
 export function connect(
   url: string,

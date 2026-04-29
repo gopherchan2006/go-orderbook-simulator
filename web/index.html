@@ -44,6 +44,30 @@
         <h2>Order Book Heatmap <span class="hm-legend"><span class="hm-bid">&#9632;</span> bid &nbsp;<span class="hm-ask">&#9632;</span> ask</span></h2>
         <canvas id="heatmap-canvas"></canvas>
       </section>
+
+      <!-- Tape panel: live trade feed + CVD -->
+      <section class="panel" id="tape-panel">
+        <h2>Trade Tape</h2>
+        <div id="tape-layout">
+          <div id="tape-table-wrap">
+            <table class="tape-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Price</th>
+                  <th>Qty</th>
+                  <th>Side</th>
+                </tr>
+              </thead>
+              <tbody id="tape-body"></tbody>
+            </table>
+          </div>
+          <div id="cvd-wrap">
+            <div class="cvd-label">Cumulative Volume Delta</div>
+            <canvas id="cvd-canvas"></canvas>
+          </div>
+        </div>
+      </section>
     </main>
 
     <script type="module" src="/src/main.ts"></script>
