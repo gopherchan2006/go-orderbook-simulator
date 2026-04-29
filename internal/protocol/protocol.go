@@ -21,3 +21,21 @@ type DepthUpdate struct {
 	Bids  []Level `json:"b"`
 	Asks  []Level `json:"a"`
 }
+
+// Side of a trade.
+type Side string
+
+const (
+	Buy  Side = "buy"
+	Sell Side = "sell"
+)
+
+// Trade represents a single executed trade from the tape.
+type Trade struct {
+	Event     string  `json:"e"`
+	Ts        int64   `json:"ts"`
+	Price     float64 `json:"p"`
+	Qty       float64 `json:"q"`
+	Side      Side    `json:"side"` // aggressor side: buy=market buy, sell=market sell
+	Seq       int64   `json:"seq"`
+}
