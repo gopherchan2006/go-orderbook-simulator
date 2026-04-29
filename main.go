@@ -12,6 +12,7 @@ import (
 	"go-orderbook-simulator/internal/orderbook"
 	"go-orderbook-simulator/internal/protocol"
 	"go-orderbook-simulator/internal/source"
+	"go-orderbook-simulator/internal/tape"
 
 	"github.com/gorilla/websocket"
 )
@@ -117,6 +118,11 @@ func main() {
 	default:
 		log.Fatalf("unknown mode %q: use sim or binance", *mode)
 	}
+
+	// Tape engine: runs in both modes, generates trade ticks from book state.
+	tapeCfg := tape.DefaultConfig()
+	tapeEngine := tape.New(tapeCfg, ob, h)
+	go tapeEngine.Run(ctx)
 
 	http.HandleFunc("/ws", corsMiddleware(*allowOrigin, func(w http.ResponseWriter, r *http.Request) {
 		handleWebSocket(w, r, h, ob)
