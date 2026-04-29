@@ -14,9 +14,10 @@ const asksBody  = document.getElementById('asks-body') as HTMLTableSectionElemen
 const bidsBody  = document.getElementById('bids-body') as HTMLTableSectionElement;
 const spreadEl  = document.getElementById('spread-bar')!;
 const canvas    = document.getElementById('depth-canvas') as HTMLCanvasElement;
-const tapeBody  = document.getElementById('tape-body') as HTMLTableSectionElement;
-const cvdCanvas = document.getElementById('cvd-canvas') as HTMLCanvasElement;
-const tape      = new TapeRenderer(tapeBody, cvdCanvas);
+const tapeBody      = document.getElementById('tape-body') as HTMLTableSectionElement;
+const cvdCanvas     = document.getElementById('cvd-canvas') as HTMLCanvasElement;
+const bubblesCanvas = document.getElementById('bubbles-canvas') as HTMLCanvasElement;
+const tape          = new TapeRenderer(tapeBody, cvdCanvas, bubblesCanvas);
 
 function render(
   changedBids = new Set<string>(),

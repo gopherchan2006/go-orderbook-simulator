@@ -12,19 +12,15 @@
     </header>
 
     <main>
-      <!-- Top panel: Level 2 order book table -->
       <section class="panel" id="book-panel">
         <h2>Order Book</h2>
-
         <table class="ob-table" id="asks-table">
           <thead>
             <tr><th>Price (Ask)</th><th>Qty</th><th>Cumul.</th></tr>
           </thead>
           <tbody id="asks-body"></tbody>
         </table>
-
         <div id="spread-bar">— spread —</div>
-
         <table class="ob-table" id="bids-table">
           <tbody id="bids-body"></tbody>
           <thead>
@@ -33,13 +29,11 @@
         </table>
       </section>
 
-      <!-- Bottom panel: market depth chart -->
       <section class="panel" id="chart-panel">
         <h2>Market Depth</h2>
         <canvas id="depth-canvas"></canvas>
       </section>
 
-      <!-- Tape panel: live trade feed + CVD -->
       <section class="panel" id="tape-panel">
         <h2>Trade Tape</h2>
         <div id="tape-layout">
@@ -61,6 +55,11 @@
             <canvas id="cvd-canvas"></canvas>
           </div>
         </div>
+      </section>
+
+      <section class="panel" id="bubbles-panel">
+        <h2>Tape Dashboard <span class="bubbles-legend"><span class="leg-buy">●</span> buy &nbsp;<span class="leg-sell">●</span> sell &nbsp;<span class="leg-note">size = qty, x = time (60s), y = price</span></span></h2>
+        <canvas id="bubbles-canvas"></canvas>
       </section>
     </main>
 
