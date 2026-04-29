@@ -15,7 +15,6 @@ import (
 
 const binanceAggTradeStream = "wss://stream.binance.com:9443/ws/btcusdt@aggTrade"
 
-// binanceAggTradeMsg is the raw aggTrade event from Binance.
 type binanceAggTradeMsg struct {
 	EventType    string `json:"e"`
 	EventTime    int64  `json:"E"`
@@ -23,11 +22,9 @@ type binanceAggTradeMsg struct {
 	AggTradeID   int64  `json:"a"`
 	Price        string `json:"p"`
 	Qty          string `json:"q"`
-	IsBuyerMaker bool   `json:"m"` // true = seller is aggressor (market sell)
+	IsBuyerMaker bool   `json:"m"`
 }
 
-// RunBinanceTape connects to Binance aggTrade stream and broadcasts
-// protocol.Trade events via h. Reconnects automatically on disconnect.
 func RunBinanceTape(ctx context.Context, h *hub.Hub) {
 	var seq int64
 	for {
@@ -84,9 +81,6 @@ func runBinanceTapeConn(ctx context.Context, h *hub.Hub, seq *int64) error {
 			continue
 		}
 
-		// Normalize aggressor side:
-		// IsBuyerMaker=true  → buyer is the maker (passive), aggressor is seller → market sell
-		// IsBuyerMaker=false → seller is the maker (passive), aggressor is buyer → market buy
 		side := protocol.Buy
 		if msg.IsBuyerMaker {
 			side = protocol.Sell

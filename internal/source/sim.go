@@ -13,26 +13,22 @@ import (
 	"go-orderbook-simulator/internal/protocol"
 )
 
-// ScenarioUpdate is one step in the sim scenario.
 type ScenarioUpdate struct {
 	DelayMs int          `json:"delay_ms"`
 	Bids    [][2]float64 `json:"bids"`
 	Asks    [][2]float64 `json:"asks"`
 }
 
-// InitialState is the starting book state.
 type InitialState struct {
 	Bids [][2]float64 `json:"bids"`
 	Asks [][2]float64 `json:"asks"`
 }
 
-// Scenario is the full scenario file.
 type Scenario struct {
 	Initial InitialState     `json:"initial"`
 	Updates []ScenarioUpdate `json:"updates"`
 }
 
-// LoadScenario reads and parses the scenario JSON file.
 func LoadScenario(path string) (*Scenario, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -56,8 +52,6 @@ func toLevels(s [][2]float64) []protocol.Level {
 	return out
 }
 
-// RunSim runs the simulator in an infinite loop (circular scenario replay).
-// It blocks until ctx is cancelled.
 func RunSim(ctx context.Context, scenario *Scenario, ob *orderbook.OrderBook, h *hub.Hub, speed float64) {
 	var seq int64
 	for {

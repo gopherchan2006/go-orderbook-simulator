@@ -7,7 +7,6 @@ import (
 	"go-orderbook-simulator/internal/protocol"
 )
 
-// OrderBook maintains the full bid/ask state.
 type OrderBook struct {
 	mu   sync.RWMutex
 	bids map[float64]float64
@@ -21,7 +20,6 @@ func New() *OrderBook {
 	}
 }
 
-// ApplyUpdate applies a depth diff: qty=0 removes the level.
 func (ob *OrderBook) ApplyUpdate(bids, asks [][2]float64) {
 	ob.mu.Lock()
 	defer ob.mu.Unlock()
@@ -41,7 +39,6 @@ func (ob *OrderBook) ApplyUpdate(bids, asks [][2]float64) {
 	}
 }
 
-// ApplyLevels applies protocol.Level diffs (used by binance source).
 func (ob *OrderBook) ApplyLevels(bids, asks []protocol.Level) {
 	ob.mu.Lock()
 	defer ob.mu.Unlock()
@@ -61,7 +58,6 @@ func (ob *OrderBook) ApplyLevels(bids, asks []protocol.Level) {
 	}
 }
 
-// GetSnapshot returns sorted bids (desc) and asks (asc).
 func (ob *OrderBook) GetSnapshot() (bids, asks []protocol.Level) {
 	ob.mu.RLock()
 	defer ob.mu.RUnlock()
@@ -81,7 +77,6 @@ func (ob *OrderBook) GetSnapshot() (bids, asks []protocol.Level) {
 	return
 }
 
-// BestBid returns best bid price and qty (0,0 if empty).
 func (ob *OrderBook) BestBid() (price, qty float64) {
 	ob.mu.RLock()
 	defer ob.mu.RUnlock()
@@ -93,7 +88,6 @@ func (ob *OrderBook) BestBid() (price, qty float64) {
 	return
 }
 
-// BestAsk returns best ask price and qty (0,0 if empty).
 func (ob *OrderBook) BestAsk() (price, qty float64) {
 	ob.mu.RLock()
 	defer ob.mu.RUnlock()
@@ -109,8 +103,6 @@ func (ob *OrderBook) BestAsk() (price, qty float64) {
 	return
 }
 
-// TopNImbalance returns order book imbalance for top N levels.
-// Result in [-1, 1]: positive = more bid pressure.
 func (ob *OrderBook) TopNImbalance(n int) float64 {
 	bids, asks := ob.GetSnapshot()
 	var bidSum, askSum float64
@@ -127,24 +119,19 @@ func (ob *OrderBook) TopNImbalance(n int) float64 {
 	return (bidSum - askSum) / total
 }
 
-// ConsumeAsks simulates a market buy of qty: returns filled trades and removes qty from asks.
-// Returns slice of (price, filledQty) pairs.
 func (ob *OrderBook) ConsumeAsks(qty float64) [][2]float64 {
 	ob.mu.Lock()
 	defer ob.mu.Unlock()
 	return ob.consumeSide(ob.asks, qty, true)
 }
 
-// ConsumeBids simulates a market sell of qty.
 func (ob *OrderBook) ConsumeBids(qty float64) [][2]float64 {
 	ob.mu.Lock()
 	defer ob.mu.Unlock()
 	return ob.consumeSide(ob.bids, qty, false)
 }
 
-// consumeSide walks price levels (asks asc, bids desc) and fills qty.
 func (ob *OrderBook) consumeSide(side map[float64]float64, qty float64, ascending bool) [][2]float64 {
-	// collect sorted prices
 	prices := make([]float64, 0, len(side))
 	for p := range side {
 		prices = append(prices, p)

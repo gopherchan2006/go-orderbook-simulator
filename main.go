@@ -50,7 +50,6 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, h *hub.Hub, ob *ord
 		log.Printf("client disconnected: %s", r.RemoteAddr)
 	}()
 
-	// send snapshot first
 	bids, asks := ob.GetSnapshot()
 	snap := protocol.DepthSnapshot{Event: "depthSnapshot", Bids: bids, Asks: asks}
 	snapData, err := json.Marshal(snap)
@@ -120,8 +119,6 @@ func main() {
 		log.Fatalf("unknown mode %q: use sim or binance", *mode)
 	}
 
-	// Tape engine: generates synthetic trade ticks in sim mode only.
-	// In binance mode, real trades come from the aggTrade stream.
 	if *mode == "sim" {
 		tapeCfg := tape.DefaultConfig()
 		tapeEngine := tape.New(tapeCfg, ob, h)

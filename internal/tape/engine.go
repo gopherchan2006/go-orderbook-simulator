@@ -12,21 +12,14 @@ import (
 	"go-orderbook-simulator/internal/protocol"
 )
 
-// Config controls how the tape engine generates synthetic trades.
 type Config struct {
-	// TickInterval is how often we generate a trade tick.
-	TickInterval time.Duration
-	// BaseQtyMin and BaseQtyMax define the random trade size range (in base asset units).
-	BaseQtyMin float64
-	BaseQtyMax float64
-	// ImbalanceBias scales how much book imbalance shifts aggressor side probability.
-	// 0.0 = 50/50 always, 1.0 = fully determined by imbalance.
-	ImbalanceBias float64
-	// ImbalanceDepth is how many top levels to use for imbalance calculation.
+	TickInterval   time.Duration
+	BaseQtyMin     float64
+	BaseQtyMax     float64
+	ImbalanceBias  float64
 	ImbalanceDepth int
 }
 
-// DefaultConfig returns a reasonable default for the sim tape engine.
 func DefaultConfig() Config {
 	return Config{
 		TickInterval:   150 * time.Millisecond,
@@ -37,7 +30,6 @@ func DefaultConfig() Config {
 	}
 }
 
-// Engine generates synthetic trade ticks from the order book state.
 type Engine struct {
 	cfg Config
 	ob  *orderbook.OrderBook
@@ -46,7 +38,6 @@ type Engine struct {
 	rng *rand.Rand
 }
 
-// New creates a new tape engine.
 func New(cfg Config, ob *orderbook.OrderBook, h *hub.Hub) *Engine {
 	return &Engine{
 		cfg: cfg,
@@ -56,7 +47,6 @@ func New(cfg Config, ob *orderbook.OrderBook, h *hub.Hub) *Engine {
 	}
 }
 
-// Run starts the tape engine loop. Blocks until ctx is cancelled.
 func (e *Engine) Run(ctx context.Context) {
 	ticker := time.NewTicker(e.cfg.TickInterval)
 	defer ticker.Stop()
@@ -71,10 +61,7 @@ func (e *Engine) Run(ctx context.Context) {
 }
 
 func (e *Engine) tick() {
-	// Determine aggressor side based on imbalance.
 	imbalance := e.ob.TopNImbalance(e.cfg.ImbalanceDepth)
-	// imbalance in [-1,1]: positive means more bids (buyers dominant → more market buys)
-	// P(buy) = 0.5 + bias * imbalance/2
 	buyProb := 0.5 + e.cfg.ImbalanceBias*(imbalance/2.0)
 	buyProb = clamp(buyProb, 0.05, 0.95)
 
@@ -86,7 +73,6 @@ func (e *Engine) tick() {
 	qty := e.cfg.BaseQtyMin + e.rng.Float64()*(e.cfg.BaseQtyMax-e.cfg.BaseQtyMin)
 	qty = roundQty(qty)
 
-	// Match against book to get fill price(s). We broadcast each fill as a trade.
 	var fills [][2]float64
 	if side == protocol.Buy {
 		fills = e.ob.ConsumeAsks(qty)
@@ -131,6 +117,5 @@ func clamp(v, lo, hi float64) float64 {
 }
 
 func roundQty(q float64) float64 {
-	// Round to 2 decimal places.
 	return float64(int(q*100+0.5)) / 100.0
 }

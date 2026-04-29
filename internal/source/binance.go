@@ -13,17 +13,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const (
-	binanceDepthStream = "wss://stream.binance.com:9443/ws/btcusdt@depth@100ms"
-)
+const binanceDepthStream = "wss://stream.binance.com:9443/ws/btcusdt@depth@100ms"
 
-// binanceDepthMsg is the raw message from Binance diff depth stream.
 type binanceDepthMsg struct {
-	EventType string          `json:"e"`
-	EventTime int64           `json:"E"`
-	Symbol    string          `json:"s"`
-	FirstID   int64           `json:"U"`
-	FinalID   int64           `json:"u"`
+	EventType string               `json:"e"`
+	EventTime int64                `json:"E"`
+	Symbol    string               `json:"s"`
+	FirstID   int64                `json:"U"`
+	FinalID   int64                `json:"u"`
 	Bids      [][2]json.RawMessage `json:"b"`
 	Asks      [][2]json.RawMessage `json:"a"`
 }
@@ -43,8 +40,6 @@ func parseLevels(raw [][2]json.RawMessage) []protocol.Level {
 	return out
 }
 
-// RunBinance connects to Binance diff depth stream for BTCUSDT,
-// applies updates to ob, and broadcasts protocol.DepthUpdate messages via h.
 func RunBinance(ctx context.Context, ob *orderbook.OrderBook, h *hub.Hub) {
 	var seq int64
 	for {
