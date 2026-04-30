@@ -3,7 +3,9 @@ package source
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -15,15 +17,22 @@ import (
 )
 
 const binanceDepthStream = "wss://stream.binance.com:9443/ws/btcusdt@depth@100ms"
+const binanceDepthREST = "https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=1000"
 
 type binanceDepthMsg struct {
-	EventType string     `json:"e"`
-	EventTime int64      `json:"E"`
-	Symbol    string     `json:"s"`
-	FirstID   int64      `json:"U"`
-	FinalID   int64      `json:"u"`
+	EventType string      `json:"e"`
+	EventTime int64       `json:"E"`
+	Symbol    string      `json:"s"`
+	FirstID   int64       `json:"U"`
+	FinalID   int64       `json:"u"`
 	Bids      [][2]string `json:"b"`
 	Asks      [][2]string `json:"a"`
+}
+
+type binanceRESTSnap struct {
+	LastUpdateID int64       `json:"lastUpdateId"`
+	Bids         [][2]string `json:"bids"`
+	Asks         [][2]string `json:"asks"`
 }
 
 func parseLevels(raw [][2]string) []protocol.Level {
@@ -40,6 +49,26 @@ func parseLevels(raw [][2]string) []protocol.Level {
 		out = append(out, protocol.Level{Price: p, Amount: q})
 	}
 	return out
+}
+
+func fetchRESTSnapshot(ctx context.Context) (*binanceRESTSnap, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, binanceDepthREST, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("REST snapshot: HTTP %d", resp.StatusCode)
+	}
+	var snap binanceRESTSnap
+	if err := json.NewDecoder(resp.Body).Decode(&snap); err != nil {
+		return nil, err
+	}
+	return &snap, nil
 }
 
 func RunBinance(ctx context.Context, ob *orderbook.OrderBook, h *hub.Hub) {
@@ -70,7 +99,26 @@ func runBinanceConn(ctx context.Context, ob *orderbook.OrderBook, h *hub.Hub, se
 		return err
 	}
 	defer conn.Close()
-	log.Printf("binance depth: connected")
+	log.Printf("binance depth: connected, fetching REST snapshot...")
+
+	snap, err := fetchRESTSnapshot(ctx)
+	if err != nil {
+		return fmt.Errorf("REST snapshot fetch failed: %w", err)
+	}
+	log.Printf("binance depth: REST snapshot at lastUpdateId=%d", snap.LastUpdateID)
+
+	snapBids := parseLevels(snap.Bids)
+	snapAsks := parseLevels(snap.Asks)
+	ob.ResetLevels(snapBids, snapAsks)
+
+	snapMsg, err := json.Marshal(protocol.DepthSnapshot{
+		Event: "depthSnapshot",
+		Bids:  snapBids,
+		Asks:  snapAsks,
+	})
+	if err == nil {
+		h.Broadcast(snapMsg)
+	}
 
 	for {
 		select {
@@ -87,6 +135,11 @@ func runBinanceConn(ctx context.Context, ob *orderbook.OrderBook, h *hub.Hub, se
 		var msg binanceDepthMsg
 		if err := json.Unmarshal(raw, &msg); err != nil {
 			log.Printf("binance depth: parse error: %v", err)
+			continue
+		}
+
+		// Drop updates already included in REST snapshot.
+		if msg.FinalID <= snap.LastUpdateID {
 			continue
 		}
 
