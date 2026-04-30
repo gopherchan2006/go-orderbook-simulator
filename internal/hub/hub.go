@@ -40,10 +40,23 @@ func (h *Hub) Broadcast(msg []byte) {
 	}
 	h.mu.Unlock()
 
+	var overflowed []chan []byte
 	for _, ch := range clients {
 		select {
 		case ch <- msg:
 		default:
+			overflowed = append(overflowed, ch)
 		}
+	}
+
+	if len(overflowed) > 0 {
+		h.mu.Lock()
+		for _, ch := range overflowed {
+			if _, ok := h.clients[ch]; ok {
+				delete(h.clients, ch)
+				close(ch)
+			}
+		}
+		h.mu.Unlock()
 	}
 }

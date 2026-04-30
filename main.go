@@ -85,7 +85,11 @@ func handleWebSocket(
 
 	for {
 		select {
-		case msg := <-send:
+		case msg, ok := <-send:
+			if !ok {
+				log.Printf("client %s: buffer overflow, disconnecting", r.RemoteAddr)
+				return
+			}
 			if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
 				log.Printf("write error: %v", err)
 				return
