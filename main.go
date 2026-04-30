@@ -169,7 +169,6 @@ func main() {
 			log.Fatalf("load scenario: %v", err)
 		}
 		log.Printf("sim mode: loaded %d updates from %q  speed=%.2f", len(scenario.Updates), *scenarioPath, *speed)
-		ob.ApplyUpdate(scenario.Initial.Bids, scenario.Initial.Asks)
 		go source.RunSim(ctx, scenario, ob, h, *speed)
 
 	case "binance":

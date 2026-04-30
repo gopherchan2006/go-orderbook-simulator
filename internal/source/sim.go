@@ -52,9 +52,23 @@ func toLevels(s [][2]float64) []protocol.Level {
 	return out
 }
 
+func broadcastSnapshot(ob *orderbook.OrderBook, h *hub.Hub) {
+	bids, asks := ob.GetSnapshot()
+	snap := protocol.DepthSnapshot{Event: "depthSnapshot", Bids: bids, Asks: asks}
+	data, err := json.Marshal(snap)
+	if err != nil {
+		log.Printf("sim: snapshot marshal error: %v", err)
+		return
+	}
+	h.Broadcast(data)
+}
+
 func RunSim(ctx context.Context, scenario *Scenario, ob *orderbook.OrderBook, h *hub.Hub, speed float64) {
 	var seq int64
 	for {
+		ob.Reset(scenario.Initial.Bids, scenario.Initial.Asks)
+		broadcastSnapshot(ob, h)
+
 		total := len(scenario.Updates)
 		for i, update := range scenario.Updates {
 			select {

@@ -20,6 +20,40 @@ func New() *OrderBook {
 	}
 }
 
+func (ob *OrderBook) Reset(bids, asks [][2]float64) {
+	ob.mu.Lock()
+	defer ob.mu.Unlock()
+	ob.bids = make(map[float64]float64)
+	ob.asks = make(map[float64]float64)
+	for _, l := range bids {
+		if l[1] > 0 {
+			ob.bids[l[0]] = l[1]
+		}
+	}
+	for _, l := range asks {
+		if l[1] > 0 {
+			ob.asks[l[0]] = l[1]
+		}
+	}
+}
+
+func (ob *OrderBook) ResetLevels(bids, asks []protocol.Level) {
+	ob.mu.Lock()
+	defer ob.mu.Unlock()
+	ob.bids = make(map[float64]float64)
+	ob.asks = make(map[float64]float64)
+	for _, l := range bids {
+		if l.Amount > 0 {
+			ob.bids[l.Price] = l.Amount
+		}
+	}
+	for _, l := range asks {
+		if l.Amount > 0 {
+			ob.asks[l.Price] = l.Amount
+		}
+	}
+}
+
 func (ob *OrderBook) ApplyUpdate(bids, asks [][2]float64) {
 	ob.mu.Lock()
 	defer ob.mu.Unlock()
