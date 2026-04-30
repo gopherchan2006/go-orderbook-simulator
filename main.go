@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"go-orderbook-simulator/internal/hub"
 	"go-orderbook-simulator/internal/logger"
@@ -17,6 +18,12 @@ import (
 	"go-orderbook-simulator/internal/tape"
 
 	"github.com/gorilla/websocket"
+)
+
+const (
+	pingInterval = 30 * time.Second
+	pongWait     = 60 * time.Second
+	writeWait    = 10 * time.Second
 )
 
 var upgrader = websocket.Upgrader{
@@ -76,6 +83,12 @@ func handleWebSocket(
 		snapLog.WriteLine(snapData)
 	}
 
+	conn.SetReadDeadline(time.Now().Add(pongWait))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -86,6 +99,9 @@ func handleWebSocket(
 		}
 	}()
 
+	pingTicker := time.NewTicker(pingInterval)
+	defer pingTicker.Stop()
+
 	for {
 		select {
 		case msg, ok := <-send:
@@ -93,8 +109,14 @@ func handleWebSocket(
 				log.Printf("client %s: buffer overflow, disconnecting", r.RemoteAddr)
 				return
 			}
+			conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
 				log.Printf("write error: %v", err)
+				return
+			}
+		case <-pingTicker.C:
+			conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		case <-done:
