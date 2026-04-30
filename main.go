@@ -58,6 +58,9 @@ func handleWebSocket(
 		log.Printf("client disconnected: %s", r.RemoteAddr)
 	}()
 
+	// Register before snapshot so we don't miss updates broadcast between
+	// snapshot read and registration. Updates buffered before the snapshot
+	// are idempotent (same level values already included in snapshot).
 	bids, asks := ob.GetSnapshot()
 	snap := protocol.DepthSnapshot{Event: "depthSnapshot", Bids: bids, Asks: asks}
 	snapData, err := json.Marshal(snap)
