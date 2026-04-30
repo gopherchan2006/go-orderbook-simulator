@@ -69,6 +69,7 @@ func RunSim(ctx context.Context, scenario *Scenario, ob *orderbook.OrderBook, h 
 		ob.Reset(scenario.Initial.Bids, scenario.Initial.Asks)
 		broadcastSnapshot(ob, h)
 
+		simNow := time.Now().UnixMilli()
 		total := len(scenario.Updates)
 		for i, update := range scenario.Updates {
 			select {
@@ -77,14 +78,17 @@ func RunSim(ctx context.Context, scenario *Scenario, ob *orderbook.OrderBook, h 
 			default:
 			}
 
-			if speed > 0 && update.DelayMs > 0 {
-				delay := time.Duration(float64(update.DelayMs)/speed) * time.Millisecond
-				timer := time.NewTimer(delay)
-				select {
-				case <-ctx.Done():
-					timer.Stop()
-					return
-				case <-timer.C:
+			if update.DelayMs > 0 {
+				simNow += int64(update.DelayMs)
+				if speed > 0 {
+					delay := time.Duration(float64(update.DelayMs)/speed) * time.Millisecond
+					timer := time.NewTimer(delay)
+					select {
+					case <-ctx.Done():
+						timer.Stop()
+						return
+					case <-timer.C:
+					}
 				}
 			}
 
@@ -94,7 +98,7 @@ func RunSim(ctx context.Context, scenario *Scenario, ob *orderbook.OrderBook, h 
 			msg := protocol.DepthUpdate{
 				Event: "depthUpdate",
 				Seq:   seq,
-				Ts:    time.Now().UnixMilli(),
+				Ts:    simNow,
 				Bids:  toLevels(update.Bids),
 				Asks:  toLevels(update.Asks),
 			}
