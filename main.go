@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 
 	"go-orderbook-simulator/internal/hub"
+	"go-orderbook-simulator/internal/logger"
 	"go-orderbook-simulator/internal/orderbook"
 	"go-orderbook-simulator/internal/protocol"
 	"go-orderbook-simulator/internal/source"
@@ -33,7 +35,13 @@ func corsMiddleware(allowOrigin string, next http.HandlerFunc) http.HandlerFunc 
 	}
 }
 
-func handleWebSocket(w http.ResponseWriter, r *http.Request, h *hub.Hub, ob *orderbook.OrderBook) {
+func handleWebSocket(
+	w http.ResponseWriter,
+	r *http.Request,
+	h *hub.Hub,
+	ob *orderbook.OrderBook,
+	snapLog *logger.Logger,
+) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("upgrade error: %v", err)
@@ -61,6 +69,9 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, h *hub.Hub, ob *ord
 		log.Printf("snapshot send error: %v", err)
 		return
 	}
+	if snapLog != nil {
+		snapLog.WriteLine(snapData)
+	}
 
 	done := make(chan struct{})
 	go func() {
@@ -85,17 +96,68 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, h *hub.Hub, ob *ord
 	}
 }
 
+func msgEventType(msg []byte) string {
+	peek := msg
+	if len(peek) > 60 {
+		peek = peek[:60]
+	}
+	if bytes.Contains(peek, []byte(`"depthUpdate"`)) {
+		return "depthUpdate"
+	}
+	if bytes.Contains(peek, []byte(`"trade"`)) {
+		return "trade"
+	}
+	return "unknown"
+}
+
 func main() {
-	mode := flag.String("mode", "sim", "source mode: sim | binance")
+	mode        := flag.String("mode", "sim", "source mode: sim | binance")
 	scenarioPath := flag.String("scenario", "", "path to scenario JSON (required for sim mode)")
-	speed := flag.Float64("speed", 1.0, "sim playback speed (1.0=realtime, 0=instant)")
-	port := flag.Int("port", 8080, "WebSocket server port")
+	speed       := flag.Float64("speed", 1.0, "sim playback speed (1.0=realtime, 0=instant)")
+	port        := flag.Int("port", 8080, "WebSocket server port")
 	allowOrigin := flag.String("allow-origin", "http://localhost:5173", "CORS allowed origin")
+	enableLogs  := flag.Bool("logs", false, "write JSONL logs to logs/")
 	flag.Parse()
 
-	ob := orderbook.New()
-	h := hub.New()
+	ob  := orderbook.New()
+	h   := hub.New()
 	ctx := context.Background()
+
+	var (
+		depthLog *logger.Logger
+		tradeLog *logger.Logger
+		snapLog  *logger.Logger
+	)
+
+	if *enableLogs {
+		var err error
+		depthLog, err = logger.New("logs/depth.jsonl")
+		if err != nil {
+			log.Fatalf("cannot open depth log: %v", err)
+		}
+		tradeLog, err = logger.New("logs/trades.jsonl")
+		if err != nil {
+			log.Fatalf("cannot open trades log: %v", err)
+		}
+		snapLog, err = logger.New("logs/snapshots.jsonl")
+		if err != nil {
+			log.Fatalf("cannot open snapshots log: %v", err)
+		}
+		log.Printf("logging enabled: logs/depth.jsonl  logs/trades.jsonl  logs/snapshots.jsonl")
+
+		h.AddHook(func(msg []byte) {
+			switch msgEventType(msg) {
+			case "depthUpdate":
+				depthLog.WriteLine(msg)
+			case "trade":
+				tradeLog.WriteLine(msg)
+			}
+		})
+
+		defer depthLog.Close()
+		defer tradeLog.Close()
+		defer snapLog.Close()
+	}
 
 	switch *mode {
 	case "sim":
@@ -126,7 +188,7 @@ func main() {
 	}
 
 	http.HandleFunc("/ws", corsMiddleware(*allowOrigin, func(w http.ResponseWriter, r *http.Request) {
-		handleWebSocket(w, r, h, ob)
+		handleWebSocket(w, r, h, ob, snapLog)
 	}))
 
 	addr := fmt.Sprintf(":%d", *port)
